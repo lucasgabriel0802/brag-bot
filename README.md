@@ -1,58 +1,89 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚀 Brag Bot
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+**Brag Bot** é uma aplicação web focada em ajudar desenvolvedores e profissionais a manterem um registro contínuo de suas conquistas, atividades e entregas, os famosos "brags". Ao utilizar inteligência artificial (com Google Gemini via Genkit), o sistema converte rascunhos informais e fragmentados em relatórios estruturados e profissionais, os chamados *Brag Documents*.
 
-## About Laravel
+## 🛠 Stack Tecnológico
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+A aplicação adota uma arquitetura full-stack moderna dividida em:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Backend:** Laravel 12, fornecendo uma API consistente, modelagem de banco de dados robusta e a base para a infraestrutura.
+- **Frontend:** Vue 3 + Inertia.js, combinando a facilidade de um desenvolvimento SPA (Single Page Application) com o roteamento nativo do Laravel. A interface é estilizada utilizando Tailwind CSS e integra o componente de notificação Sonner.
+- **Inteligência Artificial:** O fluxo de geração e enriquecimento de documentos utiliza o **Google Genkit** em TypeScript, se comunicando de forma integrada à infraestrutura (atualmente utilizando os modelos da API do Google Gemini).
+- **Ambiente de Desenvolvimento:** Laravel Sail (Docker), facilitando o encapsulamento do ecossistema e mantendo um padrão uniforme entre devs.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🚀 Como iniciar o projeto (Setup Local)
 
-## Learning Laravel
+### Pré-requisitos
+- Docker e Docker Compose instalados.
+- Opcional: Composer e PHP instalados localmente, embora seja recomendado fazer tudo via [Laravel Sail](https://laravel.com/docs/sail).
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### Passo a passo
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. **Clonar o Repositório**
+   ```bash
+   git clone https://github.com/lucasgabriel0802/brag-bot.git
+   cd brag-bot
+   ```
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+2. **Configuração de Variáveis de Ambiente**
+   Copie o arquivo base de configuração:
+   ```bash
+   cp .env.example .env
+   ```
+   **Importante:** Adicione as chaves necessárias, especialmente sua chave de acesso do Google AI para o Genkit:
+   ```env
+   GEMINI_API_KEY=sua_chave_aqui
+   ```
 
-## Agentic Development
+3. **Instalação das dependências e Build inicial**
+   Usaremos um contêiner pequeno temporário para instalar as dependências do Composer sem precisar do PHP na sua máquina:
+   ```bash
+   docker run --rm \
+       -u "$(id -u):$(id -g)" \
+       -v "$(pwd):/var/www/html" \
+       -w /var/www/html \
+       laravelsail/php84-composer:latest \
+       composer install --ignore-platform-reqs
+   ```
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+4. **Iniciando o ambiente (Sail)**
+   ```bash
+   ./vendor/bin/sail up -d
+   ```
 
+5. **Gerar chave da aplicação e rodar migrations**
+   ```bash
+   ./vendor/bin/sail php artisan key:generate
+   ./vendor/bin/sail php artisan migrate
+   ```
+
+6. **Instalar dependências Frontend**
+   ```bash
+   ./vendor/bin/sail npm install
+   ```
+
+## ⚙️ Executando a Aplicação
+
+Para o desenvolvimento diário, é necessário deixar o frontend compilando seus assets em modo "watch":
 ```bash
-composer require laravel/boost --dev
+./vendor/bin/sail npm run dev
+```
+Você pode acessar o site através do navegador em `http://localhost`.
 
-php artisan boost:install
+### 🤖 Painel do Genkit
+Caso precise testar os fluxos de IA de forma isolada, disponibilizamos um comando nativo para abrir o Genkit Developer UI:
+```bash
+./vendor/bin/sail npm run genkit:ui
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## 📂 Padrões do Projeto e Contribuição
 
-## Contributing
+- O projeto segue o fluxo do **Gitflow**. Toda nova `feature/` parte da branch `develop`.
+- Utilizamos o **Laravel Pint** para a padronização de código do backend:
+  ```bash
+  ./vendor/bin/sail pint
+  ```
+- O padrão de escrita para commits é o **Conventional Commits** (`feat:`, `fix:`, `chore:`, etc), preferencialmente em português do Brasil.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+---
+**Brag Bot** - Facilitando a criação do seu *Brag Document* anual.
