@@ -1,7 +1,8 @@
 <script setup>
 import { useForm, Link, usePage } from '@inertiajs/vue3';
-import { watch, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { Toaster, toast } from 'vue-sonner';
+import ErrorModal from '@/Components/ErrorModal.vue';
 
 const page = usePage();
 
@@ -16,36 +17,56 @@ const form = useForm({
     raw_brag: '',
 });
 
+const showErrorModal = ref(false);
+const errorMessage = ref('');
+
 const submit = () => {
     form.post('/brag/generate', {
         preserveScroll: true,
         onSuccess: () => {
             form.reset('raw_brag');
         },
+        onError: (errors) => {
+            const firstError = Object.values(errors)[0] || 'Erro ao processar a conquista.';
+            errorMessage.value = firstError;
+            showErrorModal.value = true;
+        },
     });
 };
 
-watch(() => page.props.flash.success, (successMessage) => {
+watch(() => page.props.flash?.success, (successMessage) => {
     if (successMessage) {
         toast.success(successMessage, { position: 'top-center' });
     }
 });
 
-watch(() => page.props.flash.error, (errorMessage) => {
-    if (errorMessage) {
-        toast.error(errorMessage, { position: 'top-center' }); // Actually, rule says use standard Modal for errors, but for simplicity here if it happens.
+watch(() => page.props.flash?.error, (flashError) => {
+    if (flashError) {
+        errorMessage.value = flashError;
+        showErrorModal.value = true;
     }
 });
 
 onMounted(() => {
-    if (page.props.flash.success) {
+    if (page.props.flash?.success) {
         toast.success(page.props.flash.success, { position: 'top-center' });
+    }
+    if (page.props.flash?.error) {
+        errorMessage.value = page.props.flash.error;
+        showErrorModal.value = true;
     }
 });
 </script>
 
 <template>
-    <Toaster richColors />
+    <Toaster richColors position="top-center" />
+
+    <ErrorModal 
+        :show="showErrorModal" 
+        title="Erro ao Destilar Conquista" 
+        :message="errorMessage" 
+        @close="showErrorModal = false" 
+    />
 
     <div class="min-h-screen bg-brag-base py-10 px-4 sm:px-6 lg:px-8 font-sans">
         <div class="max-w-4xl mx-auto space-y-8">
@@ -54,7 +75,7 @@ onMounted(() => {
                     Brag-Bot | Pós IA UNIPDS
                 </h1>
                 <p class="mt-2 text-lg text-gray-300 font-sans font-light">
-                    Destile e documente suas conquistas de forma inteligente.
+                    Destile e documente suas conquistas de forma inteligente com Google Genkit.
                 </p>
             </header>
 
@@ -76,7 +97,7 @@ onMounted(() => {
                         <button 
                             type="submit" 
                             :disabled="form.processing"
-                            class="relative inline-flex items-center justify-center px-8 py-3 text-base font-medium text-brag-base bg-brag-primary rounded-xl overflow-hidden transition-all hover:bg-brag-primary/90 focus:outline-none focus:ring-2 focus:ring-brag-primary focus:ring-offset-2 focus:ring-offset-brag-base disabled:opacity-70 disabled:cursor-not-allowed"
+                            class="relative inline-flex items-center justify-center px-8 py-3 text-base font-medium text-brag-base bg-brag-primary rounded-xl overflow-hidden transition-all hover:bg-brag-primary/90 focus:outline-none focus:ring-2 focus:ring-brag-primary focus:ring-offset-2 focus:ring-offset-brag-base disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
                         >
                             <span v-if="form.processing" class="absolute inset-0 flex items-center justify-center bg-brag-primary">
                                 <svg class="animate-spin h-5 w-5 text-brag-base" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
