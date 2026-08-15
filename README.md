@@ -1,21 +1,71 @@
 # 🚀 Brag Bot
 
-**Brag Bot** é uma aplicação web focada em ajudar desenvolvedores e profissionais a manterem um registro contínuo de suas conquistas, atividades e entregas, os famosos "brags". Ao utilizar inteligência artificial (com Google Gemini via Genkit), o sistema converte rascunhos informais e fragmentados em relatórios estruturados e profissionais, os chamados *Brag Documents*.
+**Brag Bot** é uma aplicação web focada em ajudar desenvolvedores e profissionais de tecnologia a documentarem e valorizarem suas conquistas e entregas profissionais (os famosos *"brags"*). 
+
+Utilizando o ecossistema do **Google Genkit** com os modelos do **Google Gemini**, a aplicação converte rascunhos informais em relatórios executivos altamente estruturados (*Brag Documents*), prontos para planos de carreira, avaliações de desempenho (1:1) e atualizações de IDP.
+
+---
+
+## 🤖 Arquitetura e Destaque da Integração com IA
+
+A inteligência artificial do Brag Bot foi desenhada seguindo as melhores práticas de **Engenharia de Prompt**, **Segurança com Guardrails** e **Design de Arquitetura de IA**:
+
+```
+[ Usuário ] ──► [ Frontend Vue 3 ] ──► [ Laravel 12 API ] ──► [ SafeBragPrompt Validation ]
+                                                                       │
+                                                                       ▼
+                                                          [ GenkitBragService (PHP) ]
+                                                                       │ (Subprocesso TSX)
+                                                                       ▼
+                                                       [ Pre-flight LLM Guardrail ]
+                                                                       │
+                                                       (Aprovado? isSafe: true)
+                                                                       │
+                                                                       ▼
+                                                          [ bragGeneratorFlow (IA) ]
+                                                                       │ (Output Zod Schema)
+                                                                       ▼
+                                                          [ Persistência & Resposta ]
+```
+
+### 🌟 Principais Destaques da IA:
+
+1. **Google Genkit em TypeScript (`src/flows.ts`):**
+   - Fluxo orquestrado (`bragGeneratorFlow`) com validação de schemas estritos via **Zod**.
+   - Persona especializada de *"Senior Career Consultant"*, focada em comunicação executiva, quantificação de impacto e síntese técnica.
+
+2. **Pre-flight LLM Guardrail (LLM-as-a-Judge):**
+   - **Auditoria de Segurança Prévia:** Antes da geração do documento, o input passa por uma avaliação rápida de segurança com a própria LLM.
+   - **Defesa em Profundidade:** Identifica e bloqueia tentativas de *Prompt Injection*, *Jailbreak* (ex: "DAN mode", "Ignore previous instructions") e *SQL Injection* semântico ou ofuscado.
+   - **Tolerância a Contexto Legítimo:** Desenvolvedores podem descrever livremente termos técnicos normais (ex: *"Otimizei consultas SQL complexas no PostgreSQL"*), sem falsos positivos.
+
+3. **Fidelidade e Preservação de Idioma (Multi-Language):**
+   - O fluxo preserva e responde rigorosamente no mesmo idioma em que o usuário redigiu sua conquista (Português, Inglês, Espanhol, etc.), mantendo a terminologia técnica intacta.
+
+4. **Orquestração Direta no Laravel (`GenkitBragService`):**
+   - O Laravel invoca o fluxo Genkit sob demanda via subprocesso assíncrono seguro (`Process::run`), aproveitando o runtime Node.js compartilhado no ambiente Docker, sem a sobrecarga de manter servidores HTTP/Express extras abertos.
+
+5. **Painel de Desenvolvimento do Genkit (Developer UI):**
+   - Ambiente interativo para inspeção de traces, visualização de latência, testes isolados e depuração de prompts:
+     ```bash
+     ./vendor/bin/sail npm run genkit:ui
+     ```
+
+---
 
 ## 🛠 Stack Tecnológico
 
-A aplicação adota uma arquitetura full-stack moderna dividida em:
+- **Backend:** Laravel 12 (PHP 8.4) com API REST versionada (`/api/v1/brags`), Eloquent ORM e migrations.
+- **Frontend:** Vue 3 + Inertia.js (Single Page Application) com Tailwind CSS v4 e notificações no topo com **Sonner**.
+- **Inteligência Artificial:** Google Genkit + Google Gemini API (`gemini-3-flash-preview`) com Zod Schemas e LLM Guardrails.
+- **Ambiente de Desenvolvimento:** Laravel Sail (Docker Compose com contêineres para App, MySQL e Redis).
 
-- **Backend:** Laravel 12, fornecendo uma API consistente, modelagem de banco de dados robusta e a base para a infraestrutura.
-- **Frontend:** Vue 3 + Inertia.js, combinando a facilidade de um desenvolvimento SPA (Single Page Application) com o roteamento nativo do Laravel. A interface é estilizada utilizando Tailwind CSS e integra o componente de notificação Sonner.
-- **Inteligência Artificial:** O fluxo de geração e enriquecimento de documentos utiliza o **Google Genkit** em TypeScript, se comunicando de forma integrada à infraestrutura (atualmente utilizando os modelos da API do Google Gemini).
-- **Ambiente de Desenvolvimento:** Laravel Sail (Docker), facilitando o encapsulamento do ecossistema e mantendo um padrão uniforme entre devs.
+---
 
-## 🚀 Como iniciar o projeto (Setup Local)
+## 🚀 Como Iniciar o Projeto (Setup Local)
 
 ### Pré-requisitos
-- Docker e Docker Compose instalados.
-- Opcional: Composer e PHP instalados localmente, embora seja recomendado fazer tudo via [Laravel Sail](https://laravel.com/docs/sail).
+- [Docker](https://www.docker.com/) e Docker Compose instalados na máquina.
 
 ### Passo a passo
 
@@ -26,17 +76,16 @@ A aplicação adota uma arquitetura full-stack moderna dividida em:
    ```
 
 2. **Configuração de Variáveis de Ambiente**
-   Copie o arquivo base de configuração:
+   Copie o arquivo de exemplo:
    ```bash
    cp .env.example .env
    ```
-   **Importante:** Adicione as chaves necessárias, especialmente sua chave de acesso do Google AI para o Genkit:
+   Abra o arquivo `.env` e configure sua chave de API do Google Gemini:
    ```env
-   GEMINI_API_KEY=sua_chave_aqui
+   GOOGLE_API_KEY=sua_chave_do_gemini_aqui
    ```
 
-3. **Instalação das dependências e Build inicial**
-   Usaremos um contêiner pequeno temporário para instalar as dependências do Composer sem precisar do PHP na sua máquina:
+3. **Instalação das dependências do Composer**
    ```bash
    docker run --rm \
        -u "$(id -u):$(id -g)" \
@@ -46,44 +95,82 @@ A aplicação adota uma arquitetura full-stack moderna dividida em:
        composer install --ignore-platform-reqs
    ```
 
-4. **Iniciando o ambiente (Sail)**
+4. **Iniciar o ambiente Sail (Docker)**
    ```bash
    ./vendor/bin/sail up -d
    ```
 
-5. **Gerar chave da aplicação e rodar migrations**
+5. **Gerar chave da aplicação e rodar as Migrations**
    ```bash
    ./vendor/bin/sail php artisan key:generate
    ./vendor/bin/sail php artisan migrate
    ```
 
-6. **Instalar dependências Frontend**
+6. **Instalar dependências do Frontend & Genkit**
    ```bash
    ./vendor/bin/sail npm install
    ```
 
+---
+
 ## ⚙️ Executando a Aplicação
 
-Para o desenvolvimento diário, é necessário deixar o frontend compilando seus assets em modo "watch":
+Para o desenvolvimento diário, inicie o compilador de assets do Vite:
 ```bash
 ./vendor/bin/sail npm run dev
 ```
-Você pode acessar o site através do navegador em `http://localhost`.
+Acesse a aplicação no navegador em: **`http://localhost`**
 
-### 🤖 Painel do Genkit
-Caso precise testar os fluxos de IA de forma isolada, disponibilizamos um comando nativo para abrir o Genkit Developer UI:
+### 🤖 Acessar o Genkit Developer UI
+Para inspecionar os fluxos de IA e traces:
 ```bash
 ./vendor/bin/sail npm run genkit:ui
 ```
+Acesse a interface do Genkit em: **`http://localhost:4000`**
 
-## 📂 Padrões do Projeto e Contribuição
+---
 
-- O projeto segue o fluxo do **Gitflow**. Toda nova `feature/` parte da branch `develop`.
-- Utilizamos o **Laravel Pint** para a padronização de código do backend:
+## 📡 Endpoints da API REST (V1)
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `GET` | `/api/v1/brags` | Lista todas as conquistas salvas em JSON |
+| `GET` | `/api/v1/brags/{id}` | Retorna os detalhes de uma conquista específica |
+| `POST` | `/api/v1/brags` | Processa o texto na IA Genkit e persiste a conquista |
+| `POST` | `/api/brag` | Endpoint de compatibilidade para clientes diretos |
+
+**Exemplo de Payload (`POST /api/v1/brags`):**
+```json
+{
+  "definition": "Migrei o banco de dados para PostgreSQL e aumentei a velocidade de resposta em 40%."
+}
+```
+
+---
+
+## 🧪 Qualidade de Código e Testes
+
+- **Executar a suíte de testes automatizados (PHPUnit/Feature Tests):**
+  ```bash
+  ./vendor/bin/sail php artisan test
+  ```
+- **Formatação de código com Laravel Pint:**
   ```bash
   ./vendor/bin/sail pint
   ```
-- O padrão de escrita para commits é o **Conventional Commits** (`feat:`, `fix:`, `chore:`, etc), preferencialmente em português do Brasil.
+- **Compilação de produção dos assets do frontend:**
+  ```bash
+  ./vendor/bin/sail npm run build
+  ```
 
 ---
-**Brag Bot** - Facilitando a criação do seu *Brag Document* anual.
+
+## 📂 Fluxo de Contribuição e Gitflow
+
+O projeto adota rigorosamente o fluxo do **Gitflow**:
+- Novas funcionalidades e manutenções partem da branch `develop` (`git flow feature start <nome>`).
+- Commits seguem o padrão **Conventional Commits** (`feat:`, `fix:`, `docs:`, `test:`, etc.).
+
+---
+
+**Brag Bot** — Valorizando e estruturando as conquistas dos desenvolvedores com Inteligência Artificial.
